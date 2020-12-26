@@ -1,0 +1,6 @@
+*.vs
+Debug/
+*.vcxproj.*
+*.sln
+*.obj
+LexicalAnalyzer/Debug
