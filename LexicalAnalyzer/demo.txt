@@ -1,0 +1,5 @@
+some_var:=0.9*10.5;
+another_one :=some_var+3.0;
+_ten := 10e-2;
+{ fafasfag asfasfa}
+result{ fafasfag asfasfa}:=(some_var *another_one)/(some_var - _ten)*_ten;

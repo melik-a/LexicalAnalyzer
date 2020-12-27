@@ -1,0 +1,13 @@
+#pragma once
+
+enum states
+{
+	START,
+	ID,
+	ARITHM_OPERATOR,
+	FLOAT_NUMBER,
+	ASSIGNMENT,
+	SEPARATOR,
+	COMMENT,	
+	ERROR
+};
