@@ -158,6 +158,8 @@
     <ClInclude Include="Lexeme.h" />
     <ClInclude Include="Scanner.h" />
     <ClInclude Include="States.h" />
+    <ClInclude Include="SyntaxTag.h" />
+    <ClInclude Include="SyntaxToken.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
