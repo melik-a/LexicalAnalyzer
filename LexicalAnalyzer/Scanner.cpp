@@ -9,19 +9,7 @@ LexicalScanner::LexicalScanner(std::string& file)
 		std::cout << "\nsomething went wrong. invalid file name or path" << std::endl;
 		throw "error -> invalid file name or path";
 	}
-	_current_state = START;
-}
-
-
-LexicalScanner::LexicalScanner(std::string&& file)
-{
-	_file.open(file);
-	if (!_file)
-	{
-		std::cout << "\nsomething went wrong. invalid file name or path" << std::endl;
-		throw "error -> invalid file name or path";
-	}
-	_current_state = START;
+	_current_state = States::START;
 }
 
 
@@ -32,10 +20,10 @@ LexicalScanner::~LexicalScanner()
 }
 
 
-const std::vector<Lexeme>* LexicalScanner::scan()
+const std::vector<SyntaxToken>* LexicalScanner::scan()
 {
-	_lexem_table.clear();
-	std::string lexem_attribute = "";
+	_lexeme_table.clear();
+	std::string lexeme = "";
 
 	char curr_symbol = ' ';
 
@@ -44,71 +32,73 @@ const std::vector<Lexeme>* LexicalScanner::scan()
 		curr_symbol = _file.get();
 		switch (_current_state)
 		{
-			case START:
-				start_state_changing(curr_symbol, lexem_attribute);
+			case States::START:
+				start_state_changing(curr_symbol, lexeme);
 				break;
-			case ID:
-				id_state_changing(curr_symbol, lexem_attribute);
+			case States::ID:
+				id_state_changing(curr_symbol, lexeme);
 				break;
-			case ARITHM_OPERATOR:
-				arithm_operator_state_changing(curr_symbol, lexem_attribute);
+			case States::ARITHM_OPERATOR:
+				arithm_operator_state_changing(curr_symbol, lexeme);
 				break;
-			case FLOAT_NUMBER:
-				float_num_state_changing(curr_symbol, lexem_attribute);
+			case States::FLOAT_NUMBER:
+				float_num_state_changing(curr_symbol, lexeme);
 				break;
-			case ASSIGNMENT:
-				assignment_state_changing(curr_symbol, lexem_attribute);
+			case States::ASSIGNMENT:
+				assignment_state_changing(curr_symbol, lexeme);
 				break;
-			case SEPARATOR:
-				separator_state_changing(curr_symbol, lexem_attribute);
+			case States::SEPARATOR:
+				separator_state_changing(curr_symbol, lexeme);
 				break;
-			case COMMENT:
-				comment_state_changing(curr_symbol, lexem_attribute);
+			case States::COMMENT:
+				comment_state_changing(curr_symbol, lexeme);
 				break;
-			case ERROR:
-				std::cout << "ERROR state with error-> " << lexem_attribute << std::endl;
+			case States::ERROR:
+				std::cout << "ERROR state with error -> " << lexeme << std::endl;
 				if (_file.is_open())
 					_file.close();
 				throw "error in the source file";
 				break;
 		}
 	}
+	
 	if (_file.is_open())
 		_file.close();
-	return &_lexem_table;
+	_lexeme_table.push_back(SyntaxToken{ "", SyntaxTag::END_OF_FILE });
+	return &_lexeme_table;
 }
 
 
-void LexicalScanner::start_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::start_state_changing(char symbol, std::string& lexeme)
 {
 	if (is_letter(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = ID;
+		lexeme += symbol;
+		_current_state = States::ID;
 	}
 	else if (is_digit(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = FLOAT_NUMBER;
+		lexeme += symbol;
+		_current_state = States::FLOAT_NUMBER;
 	}
 	else if (symbol == ';' || symbol == '(' || symbol == ')')
 	{
-		lexem_attribute += symbol;
-		_current_state = SEPARATOR;
+		lexeme += symbol;
+		_current_state = States::SEPARATOR;
 	}
 	else if (symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/')
 	{
-		lexem_attribute += symbol;
-		_current_state = ARITHM_OPERATOR;
+		lexeme += symbol;
+		_current_state = States::ARITHM_OPERATOR;
 	}
 	else if (symbol == ':')
 	{
-		lexem_attribute += symbol;
-		_current_state = ASSIGNMENT;
+		lexeme += symbol;
+		_current_state = States::ASSIGNMENT;
 	}
 	else if (symbol == '{')
 	{
-		_current_state = COMMENT;
+		_current_state = States::COMMENT;
 	}
 	else if (symbol == '\n' || symbol == '\t' || symbol == ' ')
 	{
@@ -116,199 +106,214 @@ void LexicalScanner::start_state_changing(char symbol, std::string& lexem_attrib
 	}
 	else
 	{
-		lexem_attribute = "lexical scanner can't move from the starting point. maybe something wrong with source file";
-		_current_state = ERROR;
+		lexeme = "lexical scanner can't move from the starting point. maybe something wrong with source file";
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::id_state_changing(char symbol, std::string& lexem_attribute) 
+void LexicalScanner::id_state_changing(char symbol, std::string& lexeme) 
 {
 	if (is_digit(symbol) || is_letter(symbol))
 	{
-		lexem_attribute += symbol;
+		lexeme += symbol;
 	}
 	else if (symbol == ':')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ID") });
-		lexem_attribute = symbol;
-		_current_state = ASSIGNMENT;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ID_TOKEN });
+		lexeme = symbol;
+		_current_state = States::ASSIGNMENT;
 	}
 	else if (symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ID") });
-		lexem_attribute = symbol;
-		_current_state = ARITHM_OPERATOR;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ID_TOKEN });
+		lexeme = symbol;
+		_current_state = States::ARITHM_OPERATOR;
 	}
 	else if (symbol == '{')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ID") });
-		lexem_attribute = "";
-		_current_state = COMMENT;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ID_TOKEN });
+		lexeme = "";
+		_current_state = States::COMMENT;
 	}
 	else if (symbol == ';' || symbol == ')')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ID") });
-		lexem_attribute = symbol;
-		_current_state = SEPARATOR;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ID_TOKEN });
+		lexeme = symbol;
+		_current_state = States::SEPARATOR;
 	}
 	else if (symbol == ' ' || symbol == '\t' || symbol == '\n')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ID") });
-		lexem_attribute = "";
-		_current_state = START;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ID_TOKEN });
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else
 	{
-		lexem_attribute = "error on ID state change. invalid character -> " + symbol;
-		_current_state = ERROR;
+		lexeme = "error on ID state change. invalid character -> " + symbol;
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::assignment_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::assignment_state_changing(char symbol, std::string& lexeme)
 {
 	if (symbol == '=')
 	{
-		lexem_attribute += symbol;
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ASSIGNMENT") });
-		lexem_attribute = "";
-		_current_state = START;
+		lexeme += symbol;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::ASSIGN_TOKEN });
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else
 	{
-		lexem_attribute = "error on ASSIGNMENT state change. invalid character -> " + symbol;
-		_current_state = ERROR;
+		lexeme = "error on ASSIGNMENT state change. invalid character -> " + symbol;
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::float_num_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::float_num_state_changing(char symbol, std::string& lexeme)
 {
 	if (is_digit(symbol) || symbol == '.' || symbol == 'e' || symbol == '+' || symbol == '-')
 	{
-		lexem_attribute += symbol;
+		lexeme += symbol;
 	}
 	else if (symbol == '*' || symbol == '/')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("FLOAT_NUMBER") });
-		lexem_attribute = symbol;
-		_current_state = ARITHM_OPERATOR;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::FLOAT_NUMBER });
+		lexeme = symbol;
+		_current_state = States::ARITHM_OPERATOR;
 	}
 	else if (symbol == '{')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("FLOAT_NUMBER") });
-		lexem_attribute = "";
-		_current_state = COMMENT;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::FLOAT_NUMBER });
+		lexeme = "";
+		_current_state = States::COMMENT;
 	}
 	else if (symbol == ';')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("FLOAT_NUMBER") });
-		lexem_attribute = symbol;
-		_current_state = SEPARATOR;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::FLOAT_NUMBER });
+		lexeme = symbol;
+		_current_state = States::SEPARATOR;
 	}
 	else if (symbol == ' ' || symbol == '\t' || symbol == '\n')
 	{
-		_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("FLOAT_NUMBER") });
-		lexem_attribute = "";
-		_current_state = START;
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::FLOAT_NUMBER });
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else
 	{
-		lexem_attribute = "error on FLOAT_NUMBER state change. invalid character -> " + symbol;
-		_current_state = ERROR;
+		lexeme = "error on FLOAT_NUMBER state change. invalid character -> " + symbol;
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::separator_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::separator_state_changing(char symbol, std::string& lexeme)
 {
-	_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("SEPARATOR") });
-	lexem_attribute = "";
+	if (lexeme == "(")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::LP_TOKEN });
+	else if (lexeme == ")")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::RP_TOKEN });
+	else if (lexeme == ";")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::SEMICOLON_TOKEN });
+	lexeme = "";
+	
 	if (is_letter(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = ID;
+		lexeme += symbol;
+		_current_state = States::ID;
 	}
 	else if (is_digit(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = FLOAT_NUMBER;
+		lexeme += symbol;
+		_current_state = States::FLOAT_NUMBER;
 	}
 	else if (symbol == ';' || symbol == '(' || symbol == ')')
 	{
-		lexem_attribute += symbol;
-		_current_state = SEPARATOR;
+		lexeme += symbol;
+		_current_state = States::SEPARATOR;
 	}
 	else if (symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/')
 	{
-		lexem_attribute += symbol;
-		_current_state = ARITHM_OPERATOR;
+		lexeme += symbol;
+		_current_state = States::ARITHM_OPERATOR;
 	}
 	else if (symbol == '{')
 	{
-		_current_state = COMMENT;
+		_current_state = States::COMMENT;
 	}
 	else if (symbol == ' ' || symbol == '\t' || symbol == '\n')
 	{
-		lexem_attribute = "";
-		_current_state = START;
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else
 	{
-		lexem_attribute = "error on SEPARATOR state change. invalid character -> " + symbol;
-		_current_state = ERROR;
+		lexeme = "error on SEPARATOR state change. invalid character -> " + symbol;
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::arithm_operator_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::arithm_operator_state_changing(char symbol, std::string& lexeme)
 {
-	_lexem_table.push_back(Lexeme{ lexem_attribute, std::string("ARITHM_OPERATOR") });
-	lexem_attribute = "";
+	if (lexeme == "+")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::PLUS_TOKEN });
+	else if (lexeme == "-")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::MINUS_TOKEN });
+	else if (lexeme == "*")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::STAR_TOKEN });
+	else if (lexeme == "/")
+		_lexeme_table.push_back(SyntaxToken{ lexeme, SyntaxTag::SLASH_TOKEN });
+	
+	lexeme = "";
+	
 	if (is_letter(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = ID;
+		lexeme += symbol;
+		_current_state = States::ID;
 	}
 	else if (is_digit(symbol))
 	{
-		lexem_attribute += symbol;
-		_current_state = FLOAT_NUMBER;
+		lexeme += symbol;
+		_current_state = States::FLOAT_NUMBER;
 	}
 	else if (symbol == '(' || symbol == ')')
 	{
-		lexem_attribute += symbol;
-		_current_state = SEPARATOR;
+		lexeme += symbol;
+		_current_state = States::SEPARATOR;
 	}
 	else if (symbol == '{')
 	{
-		_current_state = COMMENT;
+		_current_state = States::COMMENT;
 	}
 	else if (symbol == ' ' || symbol == '\t' || symbol == '\n')
 	{
-		lexem_attribute = "";
-		_current_state = START;
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else
 	{
-		lexem_attribute = "error on ARITHM_OPERATOR state change. invalid character -> " + symbol;
-		_current_state = ERROR;
+		lexeme = "error on ARITHM_OPERATOR state change. invalid character -> " + symbol;
+		_current_state = States::ERROR;
 	}
 }
 
 
-void LexicalScanner::comment_state_changing(char symbol, std::string& lexem_attribute)
+void LexicalScanner::comment_state_changing(char symbol, std::string& lexeme)
 {
 	if (symbol == '}')
 	{
-		lexem_attribute = "";
-		_current_state = START;
+		lexeme = "";
+		_current_state = States::START;
 	}
 	else if (symbol == '\n')
 	{
-		lexem_attribute = "not closed comment lexem";
-		_current_state = ERROR;
+		lexeme = "not closed comment lexem";
+		_current_state = States::ERROR;
 	}
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-enum states
+enum class States
 {
 	START,
 	ID,
@@ -11,3 +11,4 @@ enum states
 	COMMENT,	
 	ERROR
 };
+

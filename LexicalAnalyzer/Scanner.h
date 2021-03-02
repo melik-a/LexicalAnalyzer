@@ -6,29 +6,29 @@
 #include <vector>
 
 #include "States.h"
-#include "Lexeme.h"
+#include "SyntaxToken.h"
+#include "SyntaxTag.h"
 
 struct LexicalScanner
 {
 	LexicalScanner() = delete;
 	LexicalScanner(std::string& file);
-	LexicalScanner(std::string&& file);
 	~LexicalScanner();
 
-	const std::vector<Lexeme>* scan();
+	const std::vector<SyntaxToken>* scan();
 
 	private:
 		std::ifstream _file;
-		states _current_state;
-		std::vector<Lexeme> _lexem_table;
+		States _current_state;
+		std::vector<SyntaxToken> _lexeme_table;
 
-		void start_state_changing(char symbol, std::string& lexem_attribute);
-		void id_state_changing(char symbol, std::string& lexem_attribute);
-		void assignment_state_changing(char symbol, std::string& lexem_attribute);
-		void float_num_state_changing(char symbol, std::string& lexem_attribute);
-		void separator_state_changing(char symbol, std::string& lexem_attribute);
-		void arithm_operator_state_changing(char symbol, std::string& lexem_attribute);
-		void comment_state_changing(char symbol, std::string& lexem_attribute);
+		void start_state_changing(char symbol, std::string& lexeme);
+		void id_state_changing(char symbol, std::string& lexeme);
+		void assignment_state_changing(char symbol, std::string& lexeme);
+		void float_num_state_changing(char symbol, std::string& lexeme);
+		void separator_state_changing(char symbol, std::string& lexeme);
+		void arithm_operator_state_changing(char symbol, std::string& lexeme);
+		void comment_state_changing(char symbol, std::string& lexeme);
 
 		bool is_letter(char symbol);
 		bool is_digit(char symbol);

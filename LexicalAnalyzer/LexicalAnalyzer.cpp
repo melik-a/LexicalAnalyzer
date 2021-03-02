@@ -80,7 +80,7 @@ void print_lexeme_table(LexicalScanner& table)
 
 	auto lexemes = table.scan();
 
-	for (auto& el : *lexemes)
+	for (auto el : *lexemes)
 	{
 		std::cout << "| ";
 		std::cout.width(15);
@@ -92,7 +92,7 @@ void print_lexeme_table(LexicalScanner& table)
 		std::cout.width(15);
 		std::cout.fill(' ');
 		std::cout.right;
-		std::cout << el.lexeme_type;
+		std::cout << el.token_type_to_string();
 		std::cout.width(10);
 		std::cout.fill(' ');
 		std::cout << " | " << std::endl;
